@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
@@ -39,13 +38,44 @@ func main() {
 
 	fmt.Printf("Queue: %v has been created.\n", q)
 
-	signalchan := make(chan os.Signal, 1)
-	signal.Notify(signalchan, os.Interrupt)
+	newGame := gamelogic.NewGameState(user)
 
-	fmt.Println("Press Ctrl + C to shut down...")
+	for {
+		words := gamelogic.GetInput()
+		if len(words) == 0 {
+			continue
+		}
+		cmd := words[0]
 
-	<-signalchan
+		switch cmd {
+		case "spawn":
+			err = newGame.CommandSpawn(words)
+			if err != nil {
+				fmt.Printf("Could not spawn: %v\n", err)
+			}
 
-	fmt.Println("\nShutting Down Connection...")
+		case "move":
+			_, err := newGame.CommandMove(words)
+			if err != nil {
+				fmt.Printf("Could not move: %v\n", err)
+			}
+
+		case "status":
+			newGame.CommandStatus()
+
+		case "help":
+			gamelogic.PrintClientHelp()
+
+		case "spam":
+			fmt.Println("Spamming not allowed yet!")
+
+		case "quit":
+			gamelogic.PrintQuit()
+			return
+
+		default:
+			fmt.Printf("Unknown command: %s\n", cmd)
+		}
+	}
 
 }
