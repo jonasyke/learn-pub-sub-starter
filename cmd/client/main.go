@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -28,17 +29,20 @@ func main() {
 	}
 	queuename := routing.PauseKey + "." + user
 
-	ch, q, err := gamelogic.DeclareAndBind(conn, routing.ExchangePerilDirect, queuename, routing.PauseKey, gamelogic.SimpleQueueTransient)
+	newGame := gamelogic.NewGameState(user)
+
+	err = pubsub.SubscribeJSON(
+		conn,
+		routing.ExchangePerilDirect,
+		queuename,
+		routing.PauseKey,
+		pubsub.SimpleQueueTransient,
+		handlerPause(newGame),
+	)
 	if err != nil {
-		fmt.Printf("Error declaring and binding queue: %v\n", err)
+		fmt.Printf("Failed to subscribe to pause messages: %v\n", err)
 		os.Exit(1)
 	}
-
-	defer ch.Close()
-
-	fmt.Printf("Queue: %v has been created.\n", q)
-
-	newGame := gamelogic.NewGameState(user)
 
 	for {
 		words := gamelogic.GetInput()

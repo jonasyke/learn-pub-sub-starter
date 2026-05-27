@@ -7,8 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func PrintClientHelp() {
@@ -76,53 +74,6 @@ func GetMaliciousLog() string {
 
 func PrintQuit() {
 	fmt.Println("I hate this game! (╯°□°)╯︵ ┻━┻")
-}
-
-type SimpleQueueType int
-
-const (
-	SimpleQueueDurable SimpleQueueType = iota
-	SimpleQueueTransient
-)
-
-func DeclareAndBind(
-	conn *amqp.Connection,
-	exchange,
-	queueName,
-	key string,
-	queueType SimpleQueueType) (*amqp.Channel, amqp.Queue, error) {
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, amqp.Queue{}, fmt.Errorf("failed to open a channel: %v", err)
-	}
-
-	q, err := ch.QueueDeclare(
-		queueName,
-		queueType == SimpleQueueDurable,
-		queueType == SimpleQueueTransient,
-		queueType == SimpleQueueTransient,
-		false,
-		nil,
-	)
-	if err != nil {
-		ch.Close()
-		return nil, amqp.Queue{}, fmt.Errorf("failed to declare a queue: %v", err)
-	}
-
-	err = ch.QueueBind(
-		q.Name,
-		key,
-		exchange,
-		false,
-		nil,
-	)
-	if err != nil {
-		ch.Close()
-		return nil, amqp.Queue{}, fmt.Errorf("failed to bind a queue: %v", err)
-	}
-
-	return ch, q, nil
 }
 
 func (gs *GameState) CommandStatus() {
