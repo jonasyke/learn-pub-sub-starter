@@ -20,6 +20,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	publishCH, err := conn.Channel()
+	if err != nil {
+		fmt.Printf("Failed to open a channel: %v\n", err)
+	}
+
 	defer conn.Close()
 
 	user, err := gamelogic.ClientWelcome()
@@ -44,6 +49,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = pubsub.SubscribeJSON(
+		conn,
+		routing.ExchangePerilTopic,
+		routing.ArmyMovesPrefix+"."+user,
+		routing.ArmyMovesPrefix+".*",
+		pubsub.SimpleQueueTransient,
+		handlerArmyMoves(newGame),
+	)
+	if err != nil {
+		fmt.Printf("Failed to subscribe to army moves messages: %v\n", err)
+		os.Exit(1)
+	}
+
 	for {
 		words := gamelogic.GetInput()
 		if len(words) == 0 {
@@ -59,10 +77,23 @@ func main() {
 			}
 
 		case "move":
-			_, err := newGame.CommandMove(words)
+			move, err := newGame.CommandMove(words)
 			if err != nil {
 				fmt.Printf("Could not move: %v\n", err)
+				continue
 			}
+
+			err = pubsub.PublishJSON(
+				publishCH,
+				routing.ExchangePerilTopic,
+				routing.ArmyMovesPrefix+"."+user,
+				move,
+			)
+			if err != nil {
+				fmt.Printf("Failed to publish move: %v\n", err)
+				continue
+			}
+			fmt.Printf("%s moved %d units to %s\n", move.Player.Username, len(move.Units), move.ToLocation)
 
 		case "status":
 			newGame.CommandStatus()
