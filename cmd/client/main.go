@@ -23,6 +23,7 @@ func main() {
 	publishCH, err := conn.Channel()
 	if err != nil {
 		fmt.Printf("Failed to open a channel: %v\n", err)
+		os.Exit(1)
 	}
 
 	defer conn.Close()
@@ -55,10 +56,24 @@ func main() {
 		routing.ArmyMovesPrefix+"."+user,
 		routing.ArmyMovesPrefix+".*",
 		pubsub.SimpleQueueTransient,
-		handlerArmyMoves(newGame),
+		handlerMoves(newGame, publishCH),
 	)
 	if err != nil {
 		fmt.Printf("Failed to subscribe to army moves messages: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = pubsub.SubscribeJSON(
+		conn,
+		routing.ExchangePerilTopic,
+		"war",
+		routing.WarRecognitionsPrefix+".*",
+		pubsub.SimpleQueueDurable,
+		handlerWar(newGame),
+	)
+
+	if err != nil {
+		fmt.Printf("Failed to subscribe to war messages: %v\n", err)
 		os.Exit(1)
 	}
 
