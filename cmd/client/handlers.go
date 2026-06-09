@@ -89,3 +89,5 @@ func handlerWar(gs *gamelogic.GameState, ch *amqp.Channel) func(wr gamelogic.Rec
 		return pubsub.Ack
 	}
 }
+
+

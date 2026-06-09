@@ -27,6 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = pubsub.SubscribeGob(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.SimpleQueueDurable, handlerLogs())
+	if err != nil {
+		fmt.Printf("Failed to open Game Logs channel: %v", err)
+		os.Exit(1)
+	}
+
 	topicCh, q, err := pubsub.DeclareAndBind(conn, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.SimpleQueueDurable)
 	if err != nil {
 		fmt.Printf("Error starting topic queue: %v\n", err)
