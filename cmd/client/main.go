@@ -69,7 +69,7 @@ func main() {
 		"war",
 		routing.WarRecognitionsPrefix+".*",
 		pubsub.SimpleQueueDurable,
-		handlerWar(newGame),
+		handlerWar(newGame, publishCH),
 	)
 
 	if err != nil {
