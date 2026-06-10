@@ -15,6 +15,11 @@ func SubscribeGob[T any](conn *amqp.Connection, exchange, queueName, key string,
 		return err
 	}
 
+	err = ch.Qos(10, 0, false)
+	if err != nil {
+		return err
+	}
+
 	msgs, err := ch.Consume(
 		q.Name,
 		"",
